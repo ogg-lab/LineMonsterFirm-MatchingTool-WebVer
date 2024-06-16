@@ -45,6 +45,8 @@ class Monster():
 
         pedigree_num = df_monsters["主血統ID"].max()  # 主血統の個数（レアモン含まない。）
         df_monster = df_monsters[df_monsters["モンスター名"] == self.name]
+        df_pedigree1 = df_monsters[df_monsters["主血統"] == self.pedigree1]
+        df_pedigree2 = df_monsters[df_monsters["副血統"] == self.pedigree2]
 
         if not df_monster.empty:
             self.pedigree1 = df_monster.iloc[0, 1]
@@ -52,13 +54,28 @@ class Monster():
             self.ped1_num  = [df_monster.iloc[0, 3]]
             self.ped2_num  = [df_monster.iloc[0, 4]]
         else:
-            self.ped1_num = [i for i in range(pedigree_num+1)] # レアモン分を忘れずに加算。(0行目に置いている影響で必要。)
-            self.ped2_num = [i for i in range(pedigree_num+1)] # レアモン分を忘れずに加算。
+            if not df_pedigree1.empty and not df_pedigree2.empty:
+                self.pedigree1 = df_pedigree1.iloc[0, 1]
+                self.pedigree2 = df_pedigree2.iloc[0, 2]
+                self.ped1_num  = [df_pedigree1.iloc[0, 3]]
+                self.ped2_num  = [df_pedigree2.iloc[0, 4]]
+            elif not df_pedigree1.empty:
+                self.pedigree1 = df_pedigree1.iloc[0, 1]
+                self.ped1_num  = [df_pedigree1.iloc[0, 3]]
+                self.ped2_num  = df_pedigree1.iloc[:, 4].sort_values().drop_duplicates().tolist()
+            elif not df_pedigree2.empty:
+                self.pedigree2 = df_pedigree2.iloc[0, 2]
+                self.ped1_num  = df_pedigree2.iloc[:, 3].sort_values().drop_duplicates().tolist()
+                self.ped2_num  = [df_pedigree2.iloc[0, 4]]
+            else:
+                self.ped1_num = [i for i in range(pedigree_num+1)] # レアモン分を忘れずに加算。(0行目に置いている影響で必要。)
+                self.ped2_num = [i for i in range(pedigree_num+1)] # レアモン分を忘れずに加算。
     
     def info(self):
         print(f"==================================")
         print(f"         Name: " + self.name)
         print(f"Main Pedegree: {self.ped1_num} {self.pedigree1}")
+        print(f"Sub  Pedegree: {self.ped2_num} {self.pedigree2}")
 
 
 
@@ -107,6 +124,11 @@ class DataList():
     # 数式の選択結果
     choice_exp1 = 1
     choice_exp2 = 2
+    # パターンの選択結果
+    choice_ptn1 = 1
+    choice_ptn2 = 2
+    # パターンの出力形式数
+    num_check_ptn = 4
     # モンスター参照テーブル参照結果の個数
     num_choice_table_result = 2
     # モンスター参照テーブル参照結果の選択肢
@@ -170,6 +192,10 @@ class SessionDataList():
         # モンスター参照用のリーグ表(子、親用)
         self.lis_mons_league_tb_c       = [[]]
         self.lis_mons_league_tb_pg      = [[]]
+
+        # 補足ページに出力する用のデータ
+        self.df_affinities_m_cp = pd.DataFrame()
+        self.df_affinities_s_cp = pd.DataFrame()
 
         # ラジオボタン選択結果(テーブル情報)保存用格納域
         self.lis_choice_table = [0] * DataList.num_choice_table_result
