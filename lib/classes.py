@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/2 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -121,6 +121,9 @@ class ThreshAff():
 class DataList():
 
     ### 各種設定値
+    # 共通秘伝上昇値
+    common_aff2 = 5.0
+    common_aff3 = 12.5
     # 数式の選択結果
     choice_exp1 = 1
     choice_exp2 = 2
@@ -128,7 +131,7 @@ class DataList():
     choice_ptn1 = 1
     choice_ptn2 = 2
     # パターンの出力形式数
-    num_check_ptn = 4
+    num_check_ptn = 6
     # モンスター参照テーブル参照結果の個数
     num_choice_table_result = 2
     # モンスター参照テーブル参照結果の選択肢
@@ -143,7 +146,7 @@ class DataList():
     # 検索候補最大数
     N1 = 50000
     N2 = 50000
-    N3 = 1500000
+    N3 = 1200000
     # 最大通知結果数、メモリ使用量
     max_result_num = 4999 # +1されるため注意
     max_memory_size = 800.0
@@ -170,6 +173,8 @@ class DataList():
         self.lis_mons_league_tb_org     = [[]]
 
         # コンボリスト用リスト/DF(create_combo_list参照)
+        # なお、下記は基本的に初期化時の参照用であるため変更されず、
+        # 絞込み結果等はセッションで別で管理する。
         self.lis_main_ped = []
         self.lis_sub_ped = []
         self.lis_mons_names = []
@@ -180,8 +185,9 @@ class DataList():
         self.df_monsters_ex_org = pd.DataFrame()
         self.lis_mons_names_ex_org = []
 
-        # 相性閾値の初期値設定用リスト(起動直後のみ、それ以降は使用しない。)
-        self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]
+        # 検索候補削除時間参照用
+        self.df_monsters_del = pd.DataFrame()
+        self.lis_mons_names_del = []
 
 
 
@@ -190,8 +196,16 @@ class SessionDataList():
     def __init__(self):
 
         # モンスター参照用のリーグ表(子、親用)
+        # 削除機能を実装する際は、以下からデータを削除するのに加え、
+        # 再設定された場合の挙動も考慮すること。
         self.lis_mons_league_tb_c       = [[]]
         self.lis_mons_league_tb_pg      = [[]]
+
+        # コンボリスト用DF（子、親用）
+        # 削除機能を実装する際は、以下からデータを削除するのに加え、
+        # 再設定された場合の挙動も考慮すること。(必須ではない。)
+        self.df_monsters_c = pd.DataFrame()
+        self.df_monsters_pg = pd.DataFrame()
 
         # 補足ページに出力する用のデータ
         self.df_affinities_m_cp = pd.DataFrame()
@@ -200,14 +214,14 @@ class SessionDataList():
         # ラジオボタン選択結果(テーブル情報)保存用格納域
         self.lis_choice_table = [0] * DataList.num_choice_table_result
 
-        # コンボリスト用DF（子、親用）
-        self.df_monsters_c = pd.DataFrame()
-        self.df_monsters_pg = pd.DataFrame()
-
         # 検索用名前格納用リスト
         self.lis_names = [ [ "" for j in range(DataList.num_monster) ] for i in range(DataList.num_kind)]
 
         # 結果一時格納用の場所
         self.df_affinities       = pd.DataFrame( [] )
+        self.df_affinities_slct  = pd.DataFrame( [] )
+
+        # 相性閾値（初期化用）
+        self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]
 
 

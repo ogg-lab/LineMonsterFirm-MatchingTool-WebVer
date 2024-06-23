@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/16 sean of copyright owner
+   Copyright 2024/6/23 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -39,16 +39,13 @@ from lib.arrange_widget import disp_result
 def main():
 
     # ページの初期設定
-    init_page_setting("S Tool", "S Tool", "Version 3.1.0")
+    init_page_setting("S Tool", "S Tool", "Version 3.2.0")
 
     # データリストの初期化
     datalist = init_datalist_for_all_client()
 
     # セッション初期化
     init_session_state(datalist)
-
-    # ラジオボタン作成
-    create_radio_button(datalist)
 
     # リセット/セレクトボックスの作成
     create_select_area(datalist)
@@ -63,23 +60,11 @@ def main():
     create_search_button(datalist, used_memory)
     
     # 結果の表示
-    disp_result(used_memory)
+    disp_result(datalist, used_memory)
 
 
 
 # 呼び出し
 if __name__ == '__main__':
     main()
-
-    #  参照データ設定
-    ## 所持モンスター設定
-    ## モンスター参照テーブル設定
-    
-    # 検索モンスター名設定
-    
-    #  検索オプション
-    ## 計算手法設定
-    ## 出力形式設定
-    ## 相性値閾値設定
-    ## 共通秘伝設定
 
