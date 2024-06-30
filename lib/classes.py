@@ -1,5 +1,5 @@
 """
-   Copyright 2024/6/23 sean of copyright owner
+   Copyright 2024/6/29 sean of copyright owner
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 """
 
 import pandas as pd
+from st_aggrid.shared import JsCode
 
 
 
@@ -138,6 +139,8 @@ class DataList():
     choice_table_org = 1
     choice_table_all = 2
     choice_table_ex_org = 3
+    choice_table_only_org = 4
+    choice_table_only_rare = 5
     # モンスター名設定欄の枠の数
     num_monster = 7
     num_kind = 3
@@ -171,6 +174,9 @@ class DataList():
         self.lis_mons_league_tb_all     = [[]]
         self.lis_mons_league_tb_all_org = [[]]
         self.lis_mons_league_tb_org     = [[]]
+        self.lis_mons_league_tb_only_org   = [[]]
+        self.lis_mons_league_tb_only_rare  = [[]]
+    
 
         # コンボリスト用リスト/DF(create_combo_list参照)
         # なお、下記は基本的に初期化時の参照用であるため変更されず、
@@ -185,9 +191,21 @@ class DataList():
         self.df_monsters_ex_org = pd.DataFrame()
         self.lis_mons_names_ex_org = []
 
+        self.df_monsters_only_org = pd.DataFrame()
+        self.lis_mons_names_only_org = []
+
+        self.df_monsters_only_rare = pd.DataFrame()
+        self.lis_mons_names_only_rare = []
+
         # 検索候補削除時間参照用
         self.df_monsters_del = pd.DataFrame()
         self.lis_mons_names_del = []
+
+        # 文字の色付け
+        self.cellsytle_jscode = create_jscode_aff()
+        self.cellsytle_jscode_parent = create_jscode_parent()
+        self.cellsytle_jscode_either = create_jscode_either()
+        self.cellsytle_jscode_both = create_jscode_both()
 
 
 
@@ -218,10 +236,133 @@ class SessionDataList():
         self.lis_names = [ [ "" for j in range(DataList.num_monster) ] for i in range(DataList.num_kind)]
 
         # 結果一時格納用の場所
-        self.df_affinities       = pd.DataFrame( [] )
-        self.df_affinities_slct  = pd.DataFrame( [] )
+        self.df_affinities        = pd.DataFrame( [] )
+        self.df_affinities_slct   = pd.DataFrame( [] )
+        self.df_affinities_slct_r = pd.DataFrame( [] )
+        self.str_good_monsters   = []
+        self.str_good_monsters_r = []
 
         # 相性閾値（初期化用）
         self.lis_threshs = [0, 0, 34, 32, 75, 75, 75, 75]
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_aff():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value.includes('☆')) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value.includes('◎'))  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value.includes('〇'))  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_parent():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value > 90) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value > 70)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value > 54)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_either():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value > 260) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value > 210)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value > 160)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
+
+
+
+# AgGridのオプションに使用するjscodeを作成して返却する。
+def create_jscode_both():
+
+    cellsytle_jscode = JsCode(
+    """
+    function(params) {
+        if (params.value > 610) {
+            return {
+                'color': 'black',
+                'backgroundColor': 'yellow'
+            }
+        } else if (params.value > 490)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'lime'
+            }
+        } else if (params.value > 374)  {
+            return {
+                'color': 'black',
+                'backgroundColor': 'aqua'
+            }
+        }
+    };
+    """
+    )
+
+    return cellsytle_jscode
 
 
