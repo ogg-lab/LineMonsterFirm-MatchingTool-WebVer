@@ -597,6 +597,8 @@ def search_pedigree(datalist):
     
     lis_search_mons_ids = []
     for name in st.session_state.search_mons_list:
+        if name == "":
+            continue
         df_monster = df_monsters[df_monsters["モンスター名"] == name]
         lis_search_mons_ids.append(df_monster.iloc[0, 3])
     
