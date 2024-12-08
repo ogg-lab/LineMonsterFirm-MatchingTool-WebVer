@@ -60,20 +60,23 @@ def get_mark(affinity):
 
 
 # 上位呼び出し用1
-def calc_affinity(Monster_info, thresh_aff, datalist):
+def calc_affinity(Monster_info, thresh_aff, lis_search_mons_ids, datalist):
 
-    flag = int(st.session_state.radio_calc[0])
-    if flag == DataList.choice_exp1:
-        if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
-            return calc_affinity_m(Monster_info, thresh_aff, datalist)
-        elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
-            return calc_affinity_m_ptn(Monster_info, datalist)
-    elif flag == DataList.choice_exp2:
-        if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
-            return calc_affinity_m_s(Monster_info, thresh_aff, datalist)
-        elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
-            return calc_affinity_m_s_ptn(Monster_info, datalist)
-
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        flag = int(st.session_state.radio_calc[0])
+        if flag == DataList.choice_exp1:
+            if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
+                return calc_affinity_m(Monster_info, thresh_aff, datalist)
+            elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+                return calc_affinity_m_ptn(Monster_info, datalist)
+        elif flag == DataList.choice_exp2:
+            if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
+                return calc_affinity_m_s(Monster_info, thresh_aff, datalist)
+            elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+                return calc_affinity_m_s_ptn(Monster_info, datalist)
+    else:
+        return out_candidates(lis_search_mons_ids, datalist)
+        
 
 
 # 上位呼び出し用2
@@ -93,8 +96,24 @@ def shape_data(lis_affinities):
     
     # データフレーム型への変換/ソート/ラベル付与/インデックスリセット/上限設定
     df_affinities = pd.DataFrame( lis_affinities )
-    df_affinities = df_affinities.sort_values([1, 2], ascending=[False, True])
+    df_affinities = df_affinities.sort_values([1, 3], ascending=[False, True])
     df_affinities.columns=['評価', '相性値', '子', '親①', '祖父①', '祖母①', '親②', '祖父②', '祖母②']
+    df_affinities = df_affinities.reset_index()
+    num_rows = len(df_affinities.index)
+    last_row = num_rows if num_rows <= DataList.max_result_num else DataList.max_result_num
+    df_affinities = df_affinities.loc[0:last_row, :]
+
+    return df_affinities.reset_index()
+
+
+
+def shape_data2(lis_affinities):
+    
+    # データフレーム型への変換/ソート/ラベル付与/インデックスリセット/上限設定
+    df_affinities = pd.DataFrame( lis_affinities )
+    df_affinities = df_affinities.drop_duplicates()
+    df_affinities = df_affinities.sort_values([1, 3], ascending=[False, True])
+    df_affinities.columns=['評価', '選択種族での最小相性値', '選択種族(任意)', '親①', '祖父①', '祖母①', '親②', '祖父②', '祖母②']
     df_affinities = df_affinities.reset_index()
     num_rows = len(df_affinities.index)
     last_row = num_rows if num_rows <= DataList.max_result_num else DataList.max_result_num
@@ -1154,4 +1173,138 @@ def calc_affinity_m_s_select(Monster_info, datalist):
 
     return df_affinities, str_good_monsters
 
+
+
+# テスト用
+def out_candidates(lis_search_mons_ids, datalist):
+
+    # 返却値
+    ret = False
+    # 共通秘伝値事前計算
+    common_aff = st.session_state.input_common_aff2 * DataList.common_aff2 + st.session_state.input_common_aff3 * DataList.common_aff3
+    # 閾値
+    THRESH1 = 37
+    THRESH2 = 73
+    # THRESH3 = 500 - common_aff - 32*7
+    # THRESH3 = 205
+    THRESH3 = 203
+
+    # 参照高速化のためにローカル設定
+    lis_affinities_m_cp     = datalist.lis_affinities_m_cp
+    lis_affinities_m_cpg    = datalist.lis_affinities_m_cpg
+    lis_affinities_m_cpg2   = datalist.lis_affinities_m_cpg2
+    lis_mons_league_tb_pg   = st.session_state.session_datalist.lis_mons_league_tb_pg
+    lis_affinities      = []
+    df_affinities       = pd.DataFrame( [] )
+
+    # 0件でないか確認。
+    if len(lis_search_mons_ids) == 0:
+        st.error(f"育成したい種族を1つ以上選択してから検索してください。\n")
+        return ret, df_affinities
+    
+    # 親-親のリストを作成
+    num_m_mons       = len(lis_mons_league_tb_pg)
+    lis_good_parents = [0] * num_m_mons
+    mons_id_list     = []
+    for i in range(num_m_mons):
+        if lis_mons_league_tb_pg[i][0] == "-":
+            lis_good_parents[i] = []
+        else:
+            mons_id_list.append(i)
+
+    for i in mons_id_list:
+        lis_temp = []
+        for j in mons_id_list:
+            if THRESH1 <= lis_affinities_m_cp[i][j]:
+                lis_temp.append(j)
+        lis_good_parents[i] = lis_temp
+    
+    # 子→片親分の組合せを確認
+    lis_p_g_id = [0]*(num_m_mons**3)
+    lis_parents_index = [0] * num_m_mons
+    i = 0
+    for parent in mons_id_list:
+        for granpa in mons_id_list:
+            for granma in mons_id_list:
+                if granma < granpa:
+                    continue
+                is_ok = True
+                for child in mons_id_list:  # 上位からの子のリストを使用するべき。
+                    if lis_affinities_m_cpg2[parent][granpa][granma][child] < THRESH2:
+                        is_ok = False
+                        break
+                if is_ok:
+                    lis_p_g_id[i] = [parent, granpa, granma]
+                    i += 1
+        lis_parents_index[parent] = i
+    lis_p_g_id = lis_p_g_id[:i]  # サイズを調整
+    
+    # 子一人目だけを使用してループ処理を実施し、子以外のリストを作成する。
+    p1 = 0
+    pg_pairs = []
+    child    = lis_search_mons_ids[0]
+    for pg1 in lis_p_g_id:
+        if pg1[0] != p1:
+            # 親が変わったため、リストを変更する。
+            p1 = pg1[0]
+            lis_p_g_id2_idx = []
+            for i in lis_good_parents[p1]:
+                lis_temp = [j for j in range(lis_parents_index[i-1], lis_parents_index[i])]
+                lis_p_g_id2_idx = lis_p_g_id2_idx + lis_temp  # 連結
+        v_cpg1 = lis_affinities_m_cpg[child][pg1[0]][pg1[1]][pg1[2]]
+        for pg2_i in lis_p_g_id2_idx:
+            pg2    = lis_p_g_id[pg2_i]
+            v_cpg2 = lis_affinities_m_cpg[child][pg2[0]][pg2[1]][pg2[2]]
+            v_pp   = lis_affinities_m_cp[pg1[0]][pg2[0]]
+            if (v_pp + v_cpg1 + v_cpg2) >= THRESH3:
+                pg_pairs.append([pg1[0], pg1[1], pg1[2], pg2[0], pg2[1], pg2[2]])
+
+    # 子2人目以降について、逆順でリストを参照して候補を削る。
+    for i, child in enumerate(lis_search_mons_ids):
+        if i == 0:
+            continue
+        cnt = 0
+        while cnt < len(pg_pairs):
+            pg_pair = pg_pairs[cnt]
+            v_cpg1 = lis_affinities_m_cpg[child][pg_pair[0]][pg_pair[1]][pg_pair[2]]
+            v_cpg2 = lis_affinities_m_cpg[child][pg_pair[3]][pg_pair[4]][pg_pair[5]]
+            v_pp   = lis_affinities_m_cp[pg_pair[0]][pg_pair[3]]
+            if (v_pp + v_cpg1 + v_cpg2) >= THRESH3:
+                cnt += 1
+            else:
+                pg_pairs.pop(cnt)
+
+    # 名前のリストに変換
+    for pg_pair in pg_pairs:
+        min_v = 5000
+        for child in lis_search_mons_ids:
+            v_cpg1 = lis_affinities_m_cpg[child][pg_pair[0]][pg_pair[1]][pg_pair[2]]
+            v_cpg2 = lis_affinities_m_cpg[child][pg_pair[3]][pg_pair[4]][pg_pair[5]]
+            v_pp   = lis_affinities_m_cp[pg_pair[0]][pg_pair[3]]
+            val = v_cpg1 + v_cpg2 + v_pp
+            if val < min_v:
+                min_v = val
+        min_v = min_v + 7*32 + common_aff
+        p1  = lis_mons_league_tb_pg[pg_pair[0]][0]
+        gp1 = lis_mons_league_tb_pg[pg_pair[1]][0]
+        gm1 = lis_mons_league_tb_pg[pg_pair[2]][0]
+        p2  = lis_mons_league_tb_pg[pg_pair[3]][0]
+        gp2 = lis_mons_league_tb_pg[pg_pair[4]][0]
+        gm2 = lis_mons_league_tb_pg[pg_pair[5]][0]
+        lis_affinities.append(["-", min_v, "-", p1, gp1, gm1, p2, gp2, gm2])
+
+    if len(lis_affinities) == 0:
+        st.error(f"評価◎以上の子-両親-祖父母①-祖父母②の組み合わせ候補が0件です。\n現状の閾値設定では出力不可です。管理者に問い合わせください。\n")
+        return ret, df_affinities
+
+    # データ整形
+    df_affinities = shape_data2(lis_affinities)
+
+    # 最後に出力
+    # print(len(df_affinities))
+
+    # 返却値設定
+    ret = True
+ 
+    return ret, df_affinities
 

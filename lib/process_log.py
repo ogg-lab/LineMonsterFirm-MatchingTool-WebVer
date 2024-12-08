@@ -72,6 +72,10 @@ def set_log(Monster_info, thresh_aff):
         size4 = 36 - len(monster.pedigree2) * 4
         write_log(f"{message_list1[i]}:{monster.name:>{size2}}, メイン：{monster.pedigree1:>{size3}}, サブ：{monster.pedigree2:>{size4}}")
 
+    # 検索方式
+    write_log(f"◎検索モード：")
+    write_log(f"　　{st.session_state.radio_search_mode}")
+
     # 共通秘伝
     write_log(f"◎共通秘伝：")
     aff2 = st.session_state.input_common_aff2*DataList.common_aff2
@@ -113,18 +117,21 @@ def set_log(Monster_info, thresh_aff):
 
     # 閾値
     write_log(f"◎相性値閾値：")
-    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
-        write_log(f"　　★★パターン方式に「2.特定パターン」を選択している場合は閾値自動設定のみ有効。")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+            write_log(f"　　★★パターン方式に「2.特定パターン」を選択している場合は閾値自動設定のみ有効。")
+        else:
+            write_log(f"　　★★使用していない閾値についても出力しているため注意。")
+            write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　  ：{thresh_aff.th_ped1_cpg}")
+            write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　  ：{thresh_aff.th_ped2_cpg}")
+            write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
+            write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
+            write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　：{thresh_aff.th_p1}")
+            write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　 ：{thresh_aff.th_p2}")
+            write_log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
+            write_log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
     else:
-        write_log(f"　　★★使用していない閾値についても出力しているため注意。")
-        write_log(f"　　a.子-親-祖父-祖母メイン血統の相性値閾値　　　　　　　　　  ：{thresh_aff.th_ped1_cpg}")
-        write_log(f"　　b.子-親-祖父-祖母サブ血統の相性値閾値　　　　　　　　　　  ：{thresh_aff.th_ped2_cpg}")
-        write_log(f"　　c.親①-親②メイン血統の相性値閾値　　　　　　　　　　　　 ：{thresh_aff.th_ped1_pp}")
-        write_log(f"　　d.親①-親②サブ血統の相性値閾値　　　　　　　　　　　　　 ：{thresh_aff.th_ped2_pp}")
-        write_log(f"　　e.子-親①間のメイン/サブ血統相性値合計閾値　　　　　　　　：{thresh_aff.th_p1}")
-        write_log(f"　　f.子-親②間のメイン/サブ血統相性値合計閾値　　　　　　　　 ：{thresh_aff.th_p2}")
-        write_log(f"　　g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg1}")
-        write_log(f"　　h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値 ：{thresh_aff.th_cpg2}")
+        write_log(f"　　★★本検索モードでは出力無効。")
 
     return
 

@@ -134,6 +134,17 @@ def init_session_state(datalist):
     if f"auto_search_mode" not in st.session_state:
         st.session_state.auto_search_mode = False
     
+    # 検索モード
+    if "radio_search_mode_list" not in st.session_state:
+        st.session_state.radio_search_mode_list = ["1.任意指定通常検索モード", "2.子のみ指定汎用検索モード"]
+    
+    if "radio_search_mode" not in st.session_state:
+        st.session_state.radio_search_mode = st.session_state.radio_search_mode_list[0]
+    
+    # 検索対象モンスター保存場所
+    if "search_mons_list" not in st.session_state:
+        st.session_state.search_mons_list = []
+
     # 共通秘伝
     if "input_common_aff2" not in st.session_state:
         st.session_state.input_common_aff2 = 0
@@ -219,12 +230,17 @@ def create_select_area(datalist):
     st.write('')
     st.header('◾モンスター名設定', help="ここで検索したいモンスターの設定をします。全て空白でも検索可能です。(メイン/サブ血統欄は、基本的にモンスター名絞込み用の設定です。）")
 
-    # リセットボタンの作成(押下でリセット＆セレクトボックス作成)
-    if st.button('モンスター名選択リセット', help="選択済みのセレクトボックスの内容と閾値を初期化します。"):
-        reset_select_box(datalist)
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # リセットボタンの作成(押下でリセット＆セレクトボックス作成)
+        if st.button('モンスター名選択リセット', help="選択済みのセレクトボックスの内容と閾値を初期化します。"):
+            reset_select_box(datalist)
 
-    # セレクトボックスの作成
-    create_select_box(datalist)
+        # セレクトボックスの作成
+        create_select_box(datalist)
+    else:
+        create_multiselect_for_search(datalist)
+
+    return
 
 
 
@@ -248,7 +264,7 @@ def create_select_box(datalist):
         ops_choice = 0
     else:
         ops_choice = 1
-
+    
     # セレクトボックス作成
     for i in range(DataList.num_monster):
         col1, col2, col3 = st.columns(DataList.num_kind)
@@ -292,6 +308,14 @@ def create_select_box(datalist):
 
 
 
+# 子の指定関数
+def create_multiselect_for_search(datalist):
+        
+    # マルチセレクトボックス作成
+    selected_items = st.multiselect('育成したい種族を全て入力してください。', datalist.lis_mons_names_only_org, key="search_mons_list")
+
+
+
 # 詳細設定欄の作成
 def create_details(datalist):
 
@@ -300,6 +324,9 @@ def create_details(datalist):
     st.header('◾詳細設定')
     with st.expander("詳細に設定したい場合はタップまたはクリックしてください。\nなお、モンスター名を設定する前に設定することをお勧めします。"):
         
+        # 検索モードラジオボタン作成
+        create_radio_button_for_search_mode()
+
         # 自動検索モードチェックボックス作成
         create_check_box_for_auto_search()
 
@@ -331,14 +358,30 @@ def create_details(datalist):
 
 
 
-# 自動検索モードチェックボックス作成
-def create_check_box_for_auto_search():
+# 検索モードラジオボタン作成
+def create_radio_button_for_search_mode():
 
     # 表示
     st.write('')
-    st.subheader('▪自動検索モード', help="ONにすると、各パラメタを変更する度に検索を実行するようになります。連続して検索したい場合にONにしてください。なお、何か操作するたびに検索するようになるため、処理が重くなります。不要な際にOFFにすることをお勧めします。")
-    
-    st.checkbox("自動検索モード（試験的なモードです。利用前に必ずマニュアルをご確認ください。）", value=False, key=f"auto_search_mode")
+    st.subheader('▪検索モード', help="検索モードを変更します。通常検索モードはこれまでの検索方式、汎用検索モードは複数種族の子を任意で設定した際に、各子に対して良い結果となる組合せを返す検索方式です。")
+        
+    # ラジオボタン作成
+    c  = st.radio("検索モード",      st.session_state.radio_search_mode_list, horizontal=True, key="radio_search_mode")
+    # 他からは「int(st.session_state.radio_search_mode[0])」で参照する。
+
+    return
+
+
+
+# 自動検索モードチェックボックス作成
+def create_check_box_for_auto_search():
+
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 表示
+        st.write('')
+        st.subheader('▪自動検索モード', help="ONにすると、各パラメタを変更する度に検索を実行するようになります。連続して検索したい場合にONにしてください。なお、何か操作するたびに検索するようになるため、処理が重くなります。不要な際にOFFにすることをお勧めします。")
+        
+        st.checkbox("自動検索モード（試験的なモードです。利用前に必ずマニュアルをご確認ください。）", value=False, key=f"auto_search_mode")
 
     return
 
@@ -365,20 +408,27 @@ def create_number_input_for_common_aff():
 # ラジオボタン作成関数
 def create_radio_button(datalist):
 
-    # 表示
-    st.write('')
-    st.subheader('▪モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。変更時、関連するモンスター名設定をクリアし、閾値を再設定します。")
-    
-    # テーブル選択結果格納場所の初期化
-    st.session_state.session_datalist.lis_choice_table = [int(st.session_state.radio_c[0]), int(st.session_state.radio_pg[0])]
-    
-    # ラジオボタン作成
-    c  = st.radio("子",      st.session_state.radio_table_list[0:3], horizontal=True, key="radio_c", on_change=reset_select_box, args=(datalist, False, True, False, ), help="検索時に使用する子のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
-    pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=reset_select_box, args=(datalist, False, False, True, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 表示
+        st.write('')
+        st.subheader('▪モンスター参照テーブル', help="子/親祖父母毎に検索で使用するテーブルを設定します。変更時、関連するモンスター名設定をクリアし、閾値を再設定します。")
+        
+        # テーブル選択結果格納場所の初期化
+        st.session_state.session_datalist.lis_choice_table = [int(st.session_state.radio_c[0]), int(st.session_state.radio_pg[0])]
+        
+        # ラジオボタン作成
+        c  = st.radio("子",      st.session_state.radio_table_list[0:3], horizontal=True, key="radio_c", on_change=reset_select_box, args=(datalist, False, True, False, ), help="検索時に使用する子のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
+        pg = st.radio("親祖父母", st.session_state.radio_table_list, horizontal=True, key="radio_pg", on_change=reset_select_box, args=(datalist, False, False, True, ), help="検索時に使用する親祖父母のモンスター名テーブルを設定します。設定内容に合わせて閾値を自動調整します。")
 
-    # 値設定
-    st.session_state.session_datalist.lis_choice_table[0] = int(c[0])
-    st.session_state.session_datalist.lis_choice_table[1] = int(pg[0])
+        # 値設定
+        st.session_state.session_datalist.lis_choice_table[0] = int(c[0])
+        st.session_state.session_datalist.lis_choice_table[1] = int(pg[0])
+    else:
+        # 値設定
+        st.session_state.radio_c  = st.session_state.radio_table_list[1]
+        st.session_state.radio_pg = st.session_state.radio_table_list[4]
+        st.session_state.session_datalist.lis_choice_table[0] = 2
+        st.session_state.session_datalist.lis_choice_table[1] = 5
 
     return
 
@@ -387,18 +437,19 @@ def create_radio_button(datalist):
 # マルチセレクトボックス作成関数
 def create_multiselect(datalist):
 
-    # 表示
-    st.write('')
-    st.subheader('▪検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
-        
-    # マルチセレクトボックス作成
-    selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', datalist.lis_mons_names_del, key="del_mons_list")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 表示
+        st.write('')
+        st.subheader('▪検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
+            
+        # マルチセレクトボックス作成
+        selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', datalist.lis_mons_names_del, key="del_mons_list")
 
-    # 削除確定ボタン作成
-    # if st.button('削除対象決定') or st.session_state.auto_search_mode:
-    #     with st.spinner('processiong...'):
-    #         # 検索
-    #         ret = button_calc_affinity(datalist)
+        # 削除確定ボタン作成
+        # if st.button('削除対象決定') or st.session_state.auto_search_mode:
+        #     with st.spinner('processiong...'):
+        #         # 検索
+        #         ret = button_calc_affinity(datalist)
 
     return
 
@@ -407,12 +458,15 @@ def create_multiselect(datalist):
 # 計算式指定ラジオボタン作成
 def create_radio_button_exp(datalist):
 
-    # 表示
-    st.write('')
-    st.subheader('▪計算式', help="相性値を計算する際の計算式を指定します。")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 表示
+        st.write('')
+        st.subheader('▪計算式', help="相性値を計算する際の計算式を指定します。")
 
-    # ラジオボタン作成
-    choice  = st.radio("計算手法",      st.session_state.radio_calc_list, horizontal=True, key="radio_calc", index=1, on_change=entry_set_th_from_cmb, args=(datalist, ), help="相性値を計算する際の計算式を指定します。(m+s)式が現状主流の方式です。")
+        # ラジオボタン作成
+        choice  = st.radio("計算手法",      st.session_state.radio_calc_list, horizontal=True, key="radio_calc", index=1, on_change=entry_set_th_from_cmb, args=(datalist, ), help="相性値を計算する際の計算式を指定します。(m+s)式が現状主流の方式です。")
+    else:
+        st.session_state.radio_calc = st.session_state.radio_calc_list[1]
 
     return
 
@@ -421,13 +475,16 @@ def create_radio_button_exp(datalist):
 # 検索パターン指定ラジオボタン
 def create_radio_button_ptn(datalist):
 
-    # 表示
-    st.write('')
-    st.subheader('▪出力パターン', help="全パターンを選択すると、すべての組合せから検索します。特定パターンを選択すると、次のチェックボックスで選択されたパターンのみに絞って検索します。")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 表示
+        st.write('')
+        st.subheader('▪出力パターン', help="全パターンを選択すると、すべての組合せから検索します。特定パターンを選択すると、次のチェックボックスで選択されたパターンのみに絞って検索します。")
 
-    # ラジオボタン作成
-    choice  = st.radio("パターン方式",      st.session_state.radio_ptn_list, horizontal=True, key="radio_ptn", index=1, on_change=radio_disable_entry_cmb, args=(datalist, ), help="計算結果の出力パターンを指定します。出力パターンの詳細については補足ページをご確認ください。")
-
+        # ラジオボタン作成
+        choice  = st.radio("パターン方式",      st.session_state.radio_ptn_list, horizontal=True, key="radio_ptn", index=1, on_change=radio_disable_entry_cmb, args=(datalist, ), help="計算結果の出力パターンを指定します。出力パターンの詳細については補足ページをご確認ください。")
+    else:
+        st.session_state.radio_ptn = st.session_state.radio_ptn_list[0]
+    
     return
 
 
@@ -435,33 +492,34 @@ def create_radio_button_ptn(datalist):
 # 検索パターン出力形式選択チェックボックス作成
 def create_check_box():
     
-    # ラベル
-    lis_s_ops_labels = ['1.Z-ABB×BAA', '2.Z-ABC×BCA', '3.Z-ACC×BCC', 
-                        '4.Z-ABB×BCA, Z-ABC×BAA',
-                        '5.Z-ABB×BCC, Z-ACC×BAA', 
-                        '6.Z-ABC×BCC, Z-ACC×BCA']
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # ラベル
+        lis_s_ops_labels = ['1.Z-ABB×BAA', '2.Z-ABC×BCA', '3.Z-ACC×BCC', 
+                            '4.Z-ABB×BCA, Z-ABC×BAA',
+                            '5.Z-ABB×BCC, Z-ACC×BAA', 
+                            '6.Z-ABC×BCC, Z-ACC×BCA']
 
-    # ヘルプメッセージ
-    lis_help_messages =[
-        "親と祖父母が入れ替わる形の形式を出力します。",
-        "1.の組合せの各親の祖父母どちらか一方を別モンスターに置き換えた形式を出力します。",
-        "親①、親②で同じ祖父母を使用するパターンを出力します。",
-        "1.と2.の折衷案を出力します。",
-        "1.と3.の折衷案を出力します。",
-        "2.と3.の折衷案を出力します。",
-    ]
+        # ヘルプメッセージ
+        lis_help_messages =[
+            "親と祖父母が入れ替わる形の形式を出力します。",
+            "1.の組合せの各親の祖父母どちらか一方を別モンスターに置き換えた形式を出力します。",
+            "親①、親②で同じ祖父母を使用するパターンを出力します。",
+            "1.と2.の折衷案を出力します。",
+            "1.と3.の折衷案を出力します。",
+            "2.と3.の折衷案を出力します。",
+        ]
 
-    # チェックボックス作成
-    st.write("パターン選択")
-    for i in range(2):
-        col1, col2, col3 = st.columns(3)
-        offset = i*3
-        with col1:
-            st.checkbox(lis_s_ops_labels[offset  ], value=True, key=f"check_ptn{offset  }", disabled=st.session_state.check_ptn_disabled, help=lis_help_messages[offset  ])
-        with col2:
-            st.checkbox(lis_s_ops_labels[offset+1], value=True, key=f"check_ptn{offset+1}", disabled=st.session_state.check_ptn_disabled, help=lis_help_messages[offset+1])
-        with col3:
-            st.checkbox(lis_s_ops_labels[offset+2], value=True, key=f"check_ptn{offset+2}", disabled=st.session_state.check_ptn_disabled, help=lis_help_messages[offset+2])
+        # チェックボックス作成
+        st.write("パターン選択")
+        for i in range(2):
+            col1, col2, col3 = st.columns(3)
+            offset = i*3
+            with col1:
+                st.checkbox(lis_s_ops_labels[offset  ], value=True, key=f"check_ptn{offset  }", disabled=st.session_state.check_ptn_disabled, help=lis_help_messages[offset  ])
+            with col2:
+                st.checkbox(lis_s_ops_labels[offset+1], value=True, key=f"check_ptn{offset+1}", disabled=st.session_state.check_ptn_disabled, help=lis_help_messages[offset+1])
+            with col3:
+                st.checkbox(lis_s_ops_labels[offset+2], value=True, key=f"check_ptn{offset+2}", disabled=st.session_state.check_ptn_disabled, help=lis_help_messages[offset+2])
 
     return
 
@@ -470,27 +528,28 @@ def create_check_box():
 # 閾値入力エリア作成
 def create_number_input():
 
-    # 表示
-    st.write('')
-    st.subheader('▪相性値閾値設定', help="本項目での設定値未満の相性値の場合、検索候補から除外します。（よくわからない場合はそのままで問題なし。）")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 表示
+        st.write('')
+        st.subheader('▪相性値閾値設定', help="本項目での設定値未満の相性値の場合、検索候補から除外します。（よくわからない場合はそのままで問題なし。）")
 
-    # 出力パターンが全パターンの時に表示処理
-    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
+        # 出力パターンが全パターンの時に表示処理
+        if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
 
-        # ラベルを作成
-        label_names = ["a.子-親-祖父-祖母メイン血統の相性値閾値", "b.子-親-祖父-祖母サブ血統の相性値閾値", 
-                        "c.親①-親②メイン血統の相性値閾値", "d.親①-親②サブ血統の相性値閾値", 
-                        "e.子-親①間のメイン/サブ血統相性値合計閾値", "f.子-親②間のメイン/サブ血統相性値合計閾値",
-                        "g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値", 
-                        "h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値"]
+            # ラベルを作成
+            label_names = ["a.子-親-祖父-祖母メイン血統の相性値閾値", "b.子-親-祖父-祖母サブ血統の相性値閾値", 
+                            "c.親①-親②メイン血統の相性値閾値", "d.親①-親②サブ血統の相性値閾値", 
+                            "e.子-親①間のメイン/サブ血統相性値合計閾値", "f.子-親②間のメイン/サブ血統相性値合計閾値",
+                            "g.親①家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値", 
+                            "h.親②家系の子-祖 or 親-祖間のメイン/サブ血統相性値合計閾値"]
 
-        # テキスト入力エリアを設定
-        for i in range(len(label_names)):
-            if not st.session_state.input_threshs_disabled[i]:
-                st.number_input(label_names[i], min_value=0, value=st.session_state.session_datalist.lis_threshs[i], key=f"input_thresh{i}", disabled=st.session_state.input_threshs_disabled[i])
-    
-    else:
-        st.write(f"「出力パターン」の項目で「パターン方式」に「1.全パターン」を指定した場合のみ設定可能です。")
+            # テキスト入力エリアを設定
+            for i in range(len(label_names)):
+                if not st.session_state.input_threshs_disabled[i]:
+                    st.number_input(label_names[i], min_value=0, value=st.session_state.session_datalist.lis_threshs[i], key=f"input_thresh{i}", disabled=st.session_state.input_threshs_disabled[i])
+        
+        else:
+            st.write(f"「出力パターン」の項目で「パターン方式」に「1.全パターン」を指定した場合のみ設定可能です。")
 
     return
 
@@ -499,12 +558,13 @@ def create_number_input():
 # 相性閾値自動変更無効化チェックボックス作成
 def create_thresh_disable_check_box(datalist):
     
-    # 出力パターンが全パターンの時のみ表示
-    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
-        # チェックボックス作成
-        st.write("相性値閾値自動設定")
-        flag = not st.session_state.check_ptn_disabled
-        st.checkbox("無効化", value=False, key="input_threshs_chg_disabled", disabled=flag, on_change=entry_set_th_from_cmb, args=(datalist, ), help="★★注意：無効化すると適切に検索できない場合があります。")
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # 出力パターンが全パターンの時のみ表示
+        if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
+            # チェックボックス作成
+            st.write("相性値閾値自動設定")
+            flag = not st.session_state.check_ptn_disabled
+            st.checkbox("無効化", value=False, key="input_threshs_chg_disabled", disabled=flag, on_change=entry_set_th_from_cmb, args=(datalist, ), help="★★注意：無効化すると適切に検索できない場合があります。")
 
     return
 
@@ -650,7 +710,15 @@ def set_AgGrid2(datalist, data):
         ### 逆親
         # 逆親設定
         temp = last_selected_rows
-        selected_rows_r = pd.DataFrame([[0.0, temp.iloc[0, 1], temp.iloc[0, 5], temp.iloc[0, 6], temp.iloc[0, 7], 
+        if int(st.session_state.radio_search_mode[0]) != 2:
+            if temp.iloc[0, 1] != "-":
+                temp_name = temp.iloc[0, 1]
+            else:
+                temp_name = "キュービ"
+        else:
+            if st.session_state.search_mons_list:
+                temp_name = st.session_state.search_mons_list[0]
+        selected_rows_r = pd.DataFrame([[0.0, temp_name, temp.iloc[0, 5], temp.iloc[0, 6], temp.iloc[0, 7], 
                                                                temp.iloc[0, 2], temp.iloc[0, 3], temp.iloc[0, 4]]])
         selected_rows_r.columns = temp.columns.to_list()
 
@@ -672,7 +740,7 @@ def set_AgGrid2(datalist, data):
         min2        = df_affinities_slct_r.iloc[:, 3:4].min(numeric_only=True)
         max2        = df_affinities_slct_r.iloc[:, 3:4].max(numeric_only=True)
         statistics2 = pd.DataFrame([["相性値", mark_st2_1, mark_dci2_1, mark_ci2_1, num2_1, num2_2, mean2.iloc[0], med2.iloc[0], min2.iloc[0], max2.iloc[0]]],
-                                   columns=label)
+                                columns=label)
 
         # まとめて出力
         st.markdown("###### ◎選択行（逆親バージョン）")

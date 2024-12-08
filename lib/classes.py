@@ -164,8 +164,9 @@ class DataList():
         self.lis_affinities_s_cp = [[]]
 
         # 相性値事前計算①(min(m), min(m+s)用)結果格納場所
-        self.lis_affinities_m_cpg = [[[[]]]]
-        self.lis_affinities_s_cpg = [[[[]]]]
+        self.lis_affinities_m_cpg  = [[[[]]]]  # c, p, gp, gmの順にインデックスを指定する。
+        self.lis_affinities_s_cpg  = [[[[]]]]
+        self.lis_affinities_m_cpg2 = [[[[]]]]  # p, gp, gm, cの順にインデックスを指定する。
 
         # 相性値事前計算②(min(m+s)用)結果格納場所
         self.lis_affinities_m_s_cp = [[[[]]]]

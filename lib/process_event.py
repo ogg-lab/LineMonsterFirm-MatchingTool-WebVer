@@ -529,30 +529,35 @@ def button_calc_affinity(datalist):
 
 
     ### 設定画面で設定した内容を各変数に再格納。
+    Monster_info        = []
+    thresh_aff          = []
+    lis_search_mons_ids = []
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        # モンスター名の設定
+        if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
+            child = Monster(st.session_state.session_datalist.lis_names[0][0])
+        elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
+            child   = Monster(st.session_state.session_datalist.lis_names[0][0], st.session_state.session_datalist.lis_names[1][0], st.session_state.session_datalist.lis_names[2][0])
+        parent1 = Monster(st.session_state.session_datalist.lis_names[0][1])
+        granpa1 = Monster(st.session_state.session_datalist.lis_names[0][2])
+        granma1 = Monster(st.session_state.session_datalist.lis_names[0][3])
+        parent2 = Monster(st.session_state.session_datalist.lis_names[0][4])
+        granpa2 = Monster(st.session_state.session_datalist.lis_names[0][5])
+        granma2 = Monster(st.session_state.session_datalist.lis_names[0][6])
+        Monster_info = [child, parent1, granpa1, granma1, parent2, granpa2, granma2]
 
-    # モンスター名の設定
-    if int(st.session_state.radio_ptn[0]) == DataList.choice_ptn1:  
-        child = Monster(st.session_state.session_datalist.lis_names[0][0])
-    elif int(st.session_state.radio_ptn[0]) == DataList.choice_ptn2:
-        child   = Monster(st.session_state.session_datalist.lis_names[0][0], st.session_state.session_datalist.lis_names[1][0], st.session_state.session_datalist.lis_names[2][0])
-    parent1 = Monster(st.session_state.session_datalist.lis_names[0][1])
-    granpa1 = Monster(st.session_state.session_datalist.lis_names[0][2])
-    granma1 = Monster(st.session_state.session_datalist.lis_names[0][3])
-    parent2 = Monster(st.session_state.session_datalist.lis_names[0][4])
-    granpa2 = Monster(st.session_state.session_datalist.lis_names[0][5])
-    granma2 = Monster(st.session_state.session_datalist.lis_names[0][6])
-    Monster_info = [child, parent1, granpa1, granma1, parent2, granpa2, granma2]
+        # 主血統/副血統の設定
+        for i in range(len(Monster_info)):
+            Monster_info[i].set_pedigree(datalist.df_monsters)
 
-    # 主血統/副血統の設定
-    for i in range(len(Monster_info)):
-        Monster_info[i].set_pedigree(datalist.df_monsters)
+        # 相性値閾値設定
+        thresh_aff = ThreshAff(st.session_state[f"input_thresh0"], st.session_state[f"input_thresh1"],
+                            st.session_state[f"input_thresh2"], st.session_state[f"input_thresh3"], 
+                            st.session_state[f"input_thresh4"], st.session_state[f"input_thresh5"], 
+                            st.session_state[f"input_thresh6"], st.session_state[f"input_thresh7"])
+    else:
+        lis_search_mons_ids = search_pedigree(datalist)
 
-    # 相性値閾値設定
-    thresh_aff = ThreshAff(st.session_state[f"input_thresh0"], st.session_state[f"input_thresh1"],
-                           st.session_state[f"input_thresh2"], st.session_state[f"input_thresh3"], 
-                           st.session_state[f"input_thresh4"], st.session_state[f"input_thresh5"], 
-                           st.session_state[f"input_thresh6"], st.session_state[f"input_thresh7"])
-    
     # テーブル取得
     set_using_table(datalist)
 
@@ -564,7 +569,7 @@ def button_calc_affinity(datalist):
 
     # 相性計算
     start_time = time.perf_counter()
-    ret, df_affinities = calc_affinity(Monster_info, thresh_aff, datalist)
+    ret, df_affinities = calc_affinity(Monster_info, thresh_aff, lis_search_mons_ids, datalist)
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
     write_log(f"◎処理時間： {elapsed_time:.1f}秒")
@@ -582,6 +587,20 @@ def button_calc_affinity(datalist):
     st.session_state.session_datalist.df_affinities = df_affinities
 
     return ret
+
+
+
+# テーブル情報を使用してモンスター名から主血統IDのリストを取得。
+def search_pedigree(datalist):
+
+    df_monsters = datalist.df_monsters
+    
+    lis_search_mons_ids = []
+    for name in st.session_state.search_mons_list:
+        df_monster = df_monsters[df_monsters["モンスター名"] == name]
+        lis_search_mons_ids.append(df_monster.iloc[0, 3])
+    
+    return lis_search_mons_ids
 
 
 

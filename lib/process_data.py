@@ -85,6 +85,7 @@ def read_all_data(dic_names):
     # 事前計算①(min(m)用。)
     datalist.lis_affinities_m_cpg = precalc_affinity_cpg(datalist.lis_affinities_m_cp)
     datalist.lis_affinities_s_cpg = precalc_affinity_cpg(datalist.lis_affinities_s_cp)
+    datalist.lis_affinities_m_cpg2 = precalc_affinity_cpg2(datalist.lis_affinities_m_cp)
 
     # 事前計算②(min(m+s)用。)
     datalist.lis_affinities_m_s_cp = precalc_affinity_m_s_cp(datalist.lis_affinities_m_cp, datalist.lis_affinities_s_cp)
@@ -346,6 +347,37 @@ def precalc_affinity_cpg(lis_affinities_cp):
             for granpa in range(length):
                 for granma in range(length):
                     lis_affinities_cpg[child][parent][granpa][granma] = work[child][parent][granpa] + work[child][parent][granma] + cp
+                    
+    return lis_affinities_cpg
+
+
+
+## 子/親/祖父母間相性値の事前計算関数。min(m)用
+def precalc_affinity_cpg2(lis_affinities_cp):
+
+    # 子×親 + min(子×祖父, 親×祖父) + min(子×祖母, 親×祖母)の値を格納した4次元テーブル作成。
+    # dim1：祖母、dim2：祖父、dim3：親、dim4:子
+    
+    # 3次元、4次元リスト作成
+    length = len(lis_affinities_cp)
+    work = [[[0 for i in range(length)] for j in range(length)] for k in range(length)]
+    lis_affinities_cpg = [[[[0 for i in range(length)] for j in range(length)] for k in range(length)] for l in range(length)]
+    
+    # 計算…min(子×祖父, 親×祖父)参照用テーブル
+    for child in range(length):
+        for parent in range(length):
+            for grand in range(length):
+                cg = lis_affinities_cp[child][grand]
+                pg = lis_affinities_cp[parent][grand]
+                work[child][parent][grand] = cg if cg < pg else pg
+    
+    # 実テーブル
+    for child in range(length):
+        for parent in range(length):
+            cp = lis_affinities_cp[child][parent]
+            for granpa in range(length):
+                for granma in range(length):
+                    lis_affinities_cpg[parent][granpa][granma][child] = work[child][parent][granpa] + work[child][parent][granma] + cp
                     
     return lis_affinities_cpg
 
