@@ -1291,7 +1291,8 @@ def out_candidates(lis_search_mons_ids, datalist):
         p2  = lis_mons_league_tb_pg[pg_pair[3]][0]
         gp2 = lis_mons_league_tb_pg[pg_pair[4]][0]
         gm2 = lis_mons_league_tb_pg[pg_pair[5]][0]
-        lis_affinities.append(["-", min_v, "-", p1, gp1, gm1, p2, gp2, gm2])
+        mark = get_mark(min_v)
+        lis_affinities.append([mark, min_v, "-", p1, gp1, gm1, p2, gp2, gm2])
 
     if len(lis_affinities) == 0:
         st.error(f"評価◎以上の子-両親-祖父母①-祖父母②の組み合わせ候補が0件です。\n現状の閾値設定では出力不可です。管理者に問い合わせください。\n")
