@@ -29,6 +29,7 @@ import pandas as pd
 
 # 標準ライブラリ
 import os
+import copy
 
 # 自作ライブラリ等
 from lib.classes import DataList
@@ -312,7 +313,8 @@ def create_combo_list(datalist):
 
     # 検索候補削除用のリスト
     datalist.df_monsters_del = df_monsters[(df_monsters["副血統"] != "レア") | df_monsters["モンスター名"].str.startswith('（●レア）')].copy()
-    datalist.lis_mons_names_del = datalist.df_monsters_del.iloc[:, 0].to_list()
+    datalist.lis_mons_names_del  = datalist.df_monsters_del.iloc[:, 0].to_list()
+    datalist.lis_mons_names_del2 = copy.deepcopy(datalist.lis_mons_names_only_rare)
 
     # 変数をdatalistに格納
     datalist.df_monsters = df_monsters

@@ -437,19 +437,17 @@ def create_radio_button(datalist):
 # マルチセレクトボックス作成関数
 def create_multiselect(datalist):
 
-    if int(st.session_state.radio_search_mode[0]) != 2:
-        # 表示
-        st.write('')
-        st.subheader('▪検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
-            
-        # マルチセレクトボックス作成
-        selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', datalist.lis_mons_names_del, key="del_mons_list")
+    # 表示
+    st.write('')
+    st.subheader('▪検索除外モンスター指定', help="検索結果に含めたくないモンスターについて選択します。なお、現状では検索開始時に都度候補を外す仕様としています。(処理時間かかるのでよくない)")
 
-        # 削除確定ボタン作成
-        # if st.button('削除対象決定') or st.session_state.auto_search_mode:
-        #     with st.spinner('processiong...'):
-        #         # 検索
-        #         ret = button_calc_affinity(datalist)
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        lis_mons_names_del = datalist.lis_mons_names_del
+    else:
+        lis_mons_names_del = datalist.lis_mons_names_del2 
+    
+    # マルチセレクトボックス作成
+    selected_items = st.multiselect('検索結果に含めたくないモンスターがあれば指定してください。', lis_mons_names_del, key="del_mons_list")
 
     return
 

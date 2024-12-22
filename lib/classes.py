@@ -200,7 +200,8 @@ class DataList():
 
         # 検索候補削除時間参照用
         self.df_monsters_del = pd.DataFrame()
-        self.lis_mons_names_del = []
+        self.lis_mons_names_del  = []
+        self.lis_mons_names_del2 = []
 
         # 文字の色付け
         self.cellsytle_jscode = create_jscode_aff()
