@@ -624,8 +624,12 @@ def select_calc_affinity(datalist, selected_rows, is_reverse=False):
         Monster_info[i].set_pedigree(datalist.df_monsters)
     
     # テーブル再設定
-    st.session_state.session_datalist.lis_mons_league_tb_c  = copy.deepcopy(datalist.lis_mons_league_tb_all)
-    st.session_state.session_datalist.lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_all)
+    if int(st.session_state.radio_search_mode[0]) != 2:
+        st.session_state.session_datalist.lis_mons_league_tb_c  = copy.deepcopy(datalist.lis_mons_league_tb_all)
+        st.session_state.session_datalist.lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_all)
+    else:
+        st.session_state.session_datalist.lis_mons_league_tb_c  = copy.deepcopy(datalist.lis_mons_league_tb_only_org)
+        st.session_state.session_datalist.lis_mons_league_tb_pg = copy.deepcopy(datalist.lis_mons_league_tb_only_org)
     
     # 相性計算
     df_affinities, str_good_monsters = calc_affinity_select(Monster_info, datalist)

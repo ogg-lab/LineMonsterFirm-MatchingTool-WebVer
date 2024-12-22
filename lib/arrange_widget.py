@@ -139,7 +139,7 @@ def init_session_state(datalist):
         st.session_state.radio_search_mode_list = ["1.任意指定通常検索モード", "2.子のみ指定汎用検索モード"]
     
     if "radio_search_mode" not in st.session_state:
-        st.session_state.radio_search_mode = st.session_state.radio_search_mode_list[0]
+        st.session_state.radio_search_mode = st.session_state.radio_search_mode_list[1]
     
     # 検索対象モンスター保存場所
     if "search_mons_list" not in st.session_state:
@@ -710,14 +710,15 @@ def set_AgGrid2(datalist, data):
         ### 逆親
         # 逆親設定
         temp = last_selected_rows
+        temp_name = "キュービ"
         if int(st.session_state.radio_search_mode[0]) != 2:
             if temp.iloc[0, 1] != "-":
                 temp_name = temp.iloc[0, 1]
-            else:
-                temp_name = "キュービ"
         else:
             if st.session_state.search_mons_list:
-                temp_name = st.session_state.search_mons_list[0]
+                if st.session_state.search_mons_list[0] != "":
+                    temp_name = st.session_state.search_mons_list[0]
+
         selected_rows_r = pd.DataFrame([[0.0, temp_name, temp.iloc[0, 5], temp.iloc[0, 6], temp.iloc[0, 7], 
                                                                temp.iloc[0, 2], temp.iloc[0, 3], temp.iloc[0, 4]]])
         selected_rows_r.columns = temp.columns.to_list()
