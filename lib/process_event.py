@@ -682,6 +682,8 @@ def set_using_table(datalist):
 
     # モンスターの削除
     for mons_name in st.session_state.del_mons_list:
+        if mons_name == "":
+            continue
         df_temp = df_monsters[ mons_name == df_monsters["モンスター名"] ]
         main_id = df_temp.iloc[0, 3]
         sub_id = df_temp.iloc[0, 4]
